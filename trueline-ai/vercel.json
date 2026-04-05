@@ -1,7 +1,4 @@
 {
-  "functions": {
-    "middleware.ts": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  "buildCommand": "next build",
+  "framework": "nextjs"
 }
