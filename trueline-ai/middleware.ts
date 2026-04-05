@@ -1,3 +1,4 @@
+export const runtime = 'nodejs'
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
