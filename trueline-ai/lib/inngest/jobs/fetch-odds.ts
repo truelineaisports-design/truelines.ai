@@ -33,8 +33,7 @@ export const fetchOddsJob = inngest.createFunction(
           status: 'scheduled',
         }).onConflictDoNothing().returning({ id: games.id });
 
-        let gameId = result[0]?.id;
-
+let gameId: string | undefined = result[0]?.id;
         if (!gameId) {
           const existing = await db.query.games.findFirst({
             where: (g, { and, eq }) => and(
