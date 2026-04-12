@@ -114,8 +114,7 @@ point: null as number | null,
           market_type: m.market,
           previous_line: parseFloat(m.oldPrice),
           current_line: parseFloat(m.newPrice),
-          movement_pct: null,
-          captured_at: m.movedAt ?? new Date(),
+movement_pct: null as number | null,          captured_at: m.movedAt ?? new Date(),
         }));
 
         const signals = calculateSharpSignals(
