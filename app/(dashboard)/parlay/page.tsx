@@ -10,12 +10,15 @@ export default async function ParlaysPage() {
   const { userId: clerkId } = await auth();
   if (!clerkId) redirect('/sign-in');
 
-  let [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
+let [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
   if (!user) {
     const [newUser] = await db.insert(users).values({
       clerkId: clerkId,
-      email: '',
+      email: `${clerkId}@placeholder.com`,
       subscriptionTier: 'free',
+    }).onConflictDoUpdate({
+      target: users.clerkId,
+      set: { updatedAt: new Date() }
     }).returning();
     user = newUser;
   }
