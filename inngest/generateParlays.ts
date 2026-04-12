@@ -74,10 +74,10 @@ export const generateParlays = inngest.createFunction(
       const now = new Date();
       const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-      const result = await db.select().from(games).where(
+const result = await db.select().from(games).where(
   and(
-    gte(games.scheduledAt, now),
-    lte(games.scheduledAt, tomorrow),
+    gte(games.gameDate, now),
+    lte(games.gameDate, tomorrow),
     eq(games.status, 'scheduled')
   )
 );
