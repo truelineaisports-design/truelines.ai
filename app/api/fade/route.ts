@@ -104,8 +104,8 @@ const tonightGames = await db
 
         const typedSnapshots: OddsSnapshot[] = oddsSnapshots.map((o) => ({
           bookmaker: o.bookmaker ?? '',
-          point: null,
-          price: parseFloat(o.price),
+point: null as number | null,        
+  price: parseFloat(o.price),
           captured_at: o.updatedAt ?? new Date(),
         }));
 
