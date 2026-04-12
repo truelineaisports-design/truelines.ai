@@ -17,5 +17,11 @@ export default async function BankrollPage() {
     kellyStakePct: bet.kellyStakePct ?? null,
   }));
 
-  return <BankrollDashboard bankroll={bankroll} betHistory={betHistory} />;
+  const safeBankroll = {
+    ...bankroll,
+    peakBankroll: bankroll.peakBankroll ?? bankroll.bankrollAmount,
+    maxDrawdownPct: bankroll.maxDrawdownPct ?? '0',
+  };
+
+  return <BankrollDashboard bankroll={safeBankroll} betHistory={betHistory} />;
 }
