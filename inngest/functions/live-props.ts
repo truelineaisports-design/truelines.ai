@@ -42,8 +42,7 @@ export const pollLiveGames = inngest.createFunction(
     }
 
     await step.sendEvent('fan-out-games',
-      liveGames.map((game: LiveGame) => ({
-        name: 'game/process-live',
+liveGames.map((game: any) => ({        name: 'game/process-live',
         data: { game },
       }))
     )
