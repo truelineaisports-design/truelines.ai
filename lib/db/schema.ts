@@ -201,3 +201,19 @@ export const generations = pgTable('generations', {
   metadata: jsonb('metadata'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
+
+// LINE MOVEMENTS
+export const lineMovements = pgTable('line_movements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  gameId: uuid('game_id').notNull().references(() => games.id),
+  bookmaker: varchar('bookmaker', { length: 50 }).notNull(),
+  marketType: varchar('market_type', { length: 30 }).notNull(),
+  previousLine: decimal('previous_line', { precision: 6, scale: 2 }),
+  currentLine: decimal('current_line', { precision: 6, scale: 2 }).notNull(),
+  previousOdds: decimal('previous_odds', { precision: 8, scale: 2 }),
+  currentOdds: decimal('current_odds', { precision: 8, scale: 2 }).notNull(),
+  movementPct: decimal('movement_pct', { precision: 5, scale: 3 }),
+  isSteamMove: boolean('is_steam_move').notNull().default(false),
+  capturedAt: timestamp('captured_at', { withTimezone: true }).defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
