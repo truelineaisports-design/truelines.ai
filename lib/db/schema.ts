@@ -1,25 +1,47 @@
 import { pgTable, uuid, varchar, boolean, smallint,
-  decimal, timestamp, index, uniqueIndex, char,
-  text, jsonb, integer } from 'drizzle-orm/pg-core';
+  decimal, timestamp, char, text, jsonb, integer } from 'drizzle-orm/pg-core';
 
 // GAMES
 export const games = pgTable('games', {
   id: uuid('id').primaryKey().defaultRandom(),
-  gameDate: timestamp('game_date', { withTimezone: true }).notNull(),
-  homeTeam: char('home_team', { length: 3 }).notNull(),
-  awayTeam: char('away_team', { length: 3 }).notNull(),
+  externalId: varchar('external_id', { length: 100 }).unique(),
+  nbaGameId: varchar('nba_game_id', { length: 50 }),
+  homeTeam: varchar('home_team', { length: 50 }).notNull(),
+  awayTeam: varchar('away_team', { length: 50 }).notNull(),
+  homeTeamAbbr: char('home_team_abbr', { length: 3 }).notNull(),
+  awayTeamAbbr: char('away_team_abbr', { length: 3 }).notNull(),
+  scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
+  gameDate: timestamp('game_date', { withTimezone: true }),
   status: varchar('status', { length: 20 }).notNull().default('scheduled'),
+  homeScore: smallint('home_score'),
+  awayScore: smallint('away_score'),
+  quarter: smallint('quarter'),
+  clock: varchar('clock', { length: 10 }),
+  pace: decimal('pace', { precision: 5, scale: 1 }),
+  season: varchar('season', { length: 10 }).notNull().default('2025-26'),
+  seasonType: varchar('season_type', { length: 20 }).default('regular'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // PLAYERS
 export const players = pgTable('players', {
   id: uuid('id').primaryKey().defaultRandom(),
-  nbaId: varchar('nba_id', { length: 20 }).notNull().unique(),
+  nbaPlayerId: integer('nba_player_id').unique(),
+  nbaId: varchar('nba_id', { length: 20 }),
   fullName: varchar('full_name', { length: 100 }).notNull(),
-  team: char('team', { length: 3 }).notNull(),
+  firstName: varchar('first_name', { length: 50 }),
+  lastName: varchar('last_name', { length: 50 }),
+  team: char('team', { length: 3 }),
+  teamAbbr: char('team_abbr', { length: 3 }),
   position: varchar('position', { length: 5 }),
-  active: boolean('active').notNull().default(true),
+  jerseyNumber: varchar('jersey_number', { length: 3 }),
+  isActive: boolean('is_active').notNull().default(true),
+  active: boolean('active'),
+  heightInches: smallint('height_inches'),
+  weightLbs: smallint('weight_lbs'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
 // PLAYER STATS
@@ -33,7 +55,9 @@ export const playerStats = pgTable('player_stats', {
   steals: smallint('steals'),
   blocks: smallint('blocks'),
   turnovers: smallint('turnovers'),
-  minutesPlayed: smallint('minutes_played'),
+  minutesPlayed: decimal('minutes_played', { precision: 5, scale: 1 }),
+  usageRate: decimal('usage_rate', { precision: 5, scale: 3 }),
+  isStarter: boolean('is_starter'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -41,137 +65,139 @@ export const playerStats = pgTable('player_stats', {
 export const odds = pgTable('odds', {
   id: uuid('id').primaryKey().defaultRandom(),
   gameId: uuid('game_id').notNull().references(() => games.id),
-  market: varchar('market', { length: 50 }).notNull(),
-  selection: varchar('selection', { length: 100 }).notNull(),
-  price: decimal('price', { precision: 6, scale: 2 }).notNull(),
-  bookmaker: varchar('bookmaker', { length: 50 }),
+  bookmaker: varchar('bookmaker', { length: 50 }).notNull(),
+  marketType: varchar('market_type', { length: 30 }).notNull(),
+  market: varchar('market', { length: 50 }),
+  playerId: uuid('player_id'),
+  propType: varchar('prop_type', { length: 30 }),
+  outcomeName: varchar('outcome_name', { length: 100 }).notNull(),
+  selection: varchar('selection', { length: 100 }),
+  price: decimal('price', { precision: 8, scale: 2 }).notNull(),
+  point: decimal('point', { precision: 6, scale: 2 }),
+  isLive: boolean('is_live').notNull().default(false),
+  capturedAt: timestamp('captured_at', { withTimezone: true }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
-});
-
-// LINE MOVEMENTS
-export const lineMovements = pgTable('line_movements', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  gameId: uuid('game_id').notNull().references(() => games.id),
-  market: varchar('market', { length: 50 }).notNull(),
-  oldPrice: decimal('old_price', { precision: 6, scale: 2 }).notNull(),
-  newPrice: decimal('new_price', { precision: 6, scale: 2 }).notNull(),
-  movedAt: timestamp('moved_at', { withTimezone: true }).defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
 // INJURIES
 export const injuries = pgTable('injuries', {
   id: uuid('id').primaryKey().defaultRandom(),
   playerId: uuid('player_id').notNull().references(() => players.id),
+  gameId: uuid('game_id'),
   status: varchar('status', { length: 20 }).notNull(),
-  description: varchar('description', { length: 255 }),
+  reason: varchar('reason', { length: 200 }),
+  impactScore: decimal('impact_score', { precision: 3, scale: 2 }),
+  reportedAt: timestamp('reported_at', { withTimezone: true }),
+  source: varchar('source', { length: 50 }),
+  description: varchar('description', { length: 200 }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
-// ADD to lib/db/schema.ts
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  clerkId: varchar('clerk_id', { length: 255 }).notNull().unique(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  displayName: varchar('display_name', { length: 100 }),
-  subscriptionTier: varchar('subscription_tier', { length: 20 }).notNull().default('free'),
-  dailyGenerationsUsed: smallint('daily_generations_used').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  clerkIdIdx: index('idx_users_clerk_id').on(t.clerkId),
-}));
-
+// PARLAYS
 export const parlays = pgTable('parlays', {
   id: uuid('id').primaryKey().defaultRandom(),
-  slateDate: timestamp('slate_date', { withTimezone: true }).notNull(),
+  generationId: uuid('generation_id'),
+  slateDate: timestamp('slate_date', { withTimezone: true }),
   confidence: varchar('confidence', { length: 10 }).notNull().default('medium'),
-  combinedOdds: decimal('combined_odds', { precision: 10, scale: 2 }).notNull(),
-  rationale: text('rationale').notNull(),
+  combinedOdds: varchar('combined_odds', { length: 20 }).notNull(),
+  impliedProbability: decimal('implied_probability', { precision: 5, scale: 4 }),
+  evEstimate: decimal('ev_estimate', { precision: 6, scale: 4 }),
+  rationale: text('rationale').notNull().default(''),
+  parlayType: varchar('parlay_type', { length: 20 }).default('standard'),
+  legCount: smallint('leg_count'),
+  outcome: varchar('outcome', { length: 20 }).default('pending'),
+  gradeDetails: jsonb('grade_details'),
+  gradedAt: timestamp('graded_at', { withTimezone: true }),
   isFeatured: boolean('is_featured').notNull().default(false),
-  outcome: varchar('outcome', { length: 20 }).notNull().default('pending'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  dateIdx: index('idx_parlays_date').on(t.slateDate),
-  featuredIdx: index('idx_parlays_featured').on(t.slateDate, t.isFeatured),
-}));
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
 
+// PARLAY LEGS
 export const parlayLegs = pgTable('parlay_legs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  parlayId: uuid('parlay_id').notNull().references(() => parlays.id, { onDelete: 'cascade' }),
+  parlayId: uuid('parlay_id').notNull().references(() => parlays.id),
   gameId: uuid('game_id').notNull().references(() => games.id),
-  playerId: uuid('player_id').references(() => players.id),
+  playerId: uuid('player_id'),
   betType: varchar('bet_type', { length: 30 }).notNull(),
   propType: varchar('prop_type', { length: 30 }),
   selection: varchar('selection', { length: 100 }).notNull(),
-  line: decimal('line', { precision: 6, scale: 2 }),
-  odds: decimal('odds', { precision: 8, scale: 2 }).notNull(),
-  impliedProbability: decimal('implied_probability', { precision: 5, scale: 4 }),
-  modelProbability: decimal('model_probability', { precision: 5, scale: 4 }),
-  outcome: varchar('outcome', { length: 20 }).notNull().default('pending'),
+  line: varchar('line', { length: 20 }),
+  odds: varchar('odds', { length: 20 }).notNull(),
+  impliedProbability: varchar('implied_probability', { length: 20 }),
+  modelProbability: varchar('model_probability', { length: 20 }),
+  outcome: varchar('outcome', { length: 20 }).default('pending'),
   actualValue: decimal('actual_value', { precision: 8, scale: 2 }),
-  legOrder: smallint('leg_order').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  parlayIdx: index('idx_legs_parlay').on(t.parlayId, t.legOrder),
-  gameIdx: index('idx_legs_game').on(t.gameId),
-}));
+  gradedAt: timestamp('graded_at', { withTimezone: true }),
+  legOrder: smallint('leg_order').notNull().default(1),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
 
-export const generations = pgTable('generations', {
+// USERS
+export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id'),
-  generationType: varchar('generation_type', { length: 30 }).notNull().default('parlay'),
-  totalCostUsd: decimal('total_cost_usd', { precision: 10, scale: 6 }).notNull().default('0'),
-  ceilingBreached: boolean('ceiling_breached').notNull().default(false),
-  modelCalls: jsonb('model_calls').notNull().default('[]'),
-  totalLatencyMs: integer('total_latency_ms'),
-  errorMessage: text('error_message'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  ceilingIdx: index('idx_gen_ceiling').on(t.ceilingBreached),
-  costIdx: index('idx_gen_cost').on(t.totalCostUsd),
-}));
+  clerkId: varchar('clerk_id', { length: 255 }).unique().notNull(),
+  email: varchar('email', { length: 255 }).unique().notNull(),
+  displayName: varchar('display_name', { length: 100 }),
+  subscriptionTier: varchar('subscription_tier', { length: 20 }).notNull().default('free'),
+  stripeCustomerId: varchar('stripe_customer_id', { length: 255 }),
+  dailyGenerationsUsed: smallint('daily_generations_used').notNull().default(0),
+  dailyGenerationsResetAt: timestamp('daily_generations_reset_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
 
 // USER BANKROLLS
 export const userBankrolls = pgTable('user_bankrolls', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id),
-  bankrollAmount: decimal('bankroll_amount', { precision: 12, scale: 2 }).notNull().default('1000.00'),
+  userId: uuid('user_id').unique().notNull().references(() => users.id),
+  bankrollAmount: decimal('bankroll_amount', { precision: 12, scale: 2 }).notNull().default('0'),
   riskTier: varchar('risk_tier', { length: 20 }).notNull().default('standard'),
-  kellyFraction: decimal('kelly_fraction', { precision: 5, scale: 3 }).notNull().default('0.500'),
-  initialBankroll: decimal('initial_bankroll', { precision: 12, scale: 2 }).notNull(),
-  peakBankroll: decimal('peak_bankroll', { precision: 12, scale: 2 }).notNull(),
-  maxDrawdownPct: decimal('max_drawdown_pct', { precision: 5, scale: 2 }).default('0.00'),
-  totalWagered: decimal('total_wagered', { precision: 12, scale: 2 }).notNull().default('0.00'),
-  totalWon: decimal('total_won', { precision: 12, scale: 2 }).notNull().default('0.00'),
-  totalLost: decimal('total_lost', { precision: 12, scale: 2 }).notNull().default('0.00'),
+  kellyFraction: decimal('kelly_fraction', { precision: 4, scale: 3 }).notNull().default('0.500'),
+  initialBankroll: decimal('initial_bankroll', { precision: 12, scale: 2 }).notNull().default('0'),
+  peakBankroll: decimal('peak_bankroll', { precision: 12, scale: 2 }),
+  totalWagered: decimal('total_wagered', { precision: 12, scale: 2 }).notNull().default('0'),
+  totalWon: decimal('total_won', { precision: 12, scale: 2 }).notNull().default('0'),
+  totalLost: decimal('total_lost', { precision: 12, scale: 2 }).notNull().default('0'),
   winCount: integer('win_count').notNull().default(0),
   lossCount: integer('loss_count').notNull().default(0),
   currentStreak: integer('current_streak').notNull().default(0),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  userIdx: index('idx_bankroll_user').on(t.userId),
-}));
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
 
 // BET OUTCOMES
 export const betOutcomes = pgTable('bet_outcomes', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id),
-  parlayId: uuid('parlay_id').references(() => parlays.id),
-  bankrollId: uuid('bankroll_id').notNull().references(() => userBankrolls.id),
-  betType: varchar('bet_type', { length: 20 }).notNull().default('parlay'),
+  parlayId: uuid('parlay_id'),
+  parlayLegId: uuid('parlay_leg_id'),
+  bankrollId: uuid('bankroll_id'),
+  betType: varchar('bet_type', { length: 20 }).notNull(),
   stakeAmount: decimal('stake_amount', { precision: 10, scale: 2 }).notNull(),
-  potentialPayout: decimal('potential_payout', { precision: 12, scale: 2 }),
+  potentialPayout: decimal('potential_payout', { precision: 12, scale: 2 }).notNull(),
   actualPayout: decimal('actual_payout', { precision: 12, scale: 2 }),
-  kellyStakePct: decimal('kelly_stake_pct', { precision: 8, scale: 6 }),
+  kellyStakePct: decimal('kelly_stake_pct', { precision: 5, scale: 4 }),
   oddsAtPlacement: decimal('odds_at_placement', { precision: 8, scale: 2 }).notNull(),
   sportsbook: varchar('sportsbook', { length: 50 }),
-  outcome: varchar('outcome', { length: 20 }).notNull().default('pending'),
-  placedAt: timestamp('placed_at', { withTimezone: true }).notNull().defaultNow(),
+  placedAt: timestamp('placed_at', { withTimezone: true }).defaultNow(),
   settledAt: timestamp('settled_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-}, (t) => ({
-  userIdx: index('idx_bets_user').on(t.userId),
-  outcomeIdx: index('idx_bets_outcome').on(t.outcome),
-  parlayIdx: index('idx_bets_parlay').on(t.parlayId),
-}));
+  outcome: varchar('outcome', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// GENERATIONS
+export const generations = pgTable('generations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id'),
+  generationType: varchar('generation_type', { length: 30 }).notNull().default('parlay'),
+  status: varchar('status', { length: 20 }).notNull().default('completed'),
+  totalCostUsd: varchar('total_cost_usd', { length: 20 }).notNull().default('0'),
+  ceilingBreached: boolean('ceiling_breached').notNull().default(false),
+  modelCalls: jsonb('model_calls').default('[]'),
+  totalLatencyMs: integer('total_latency_ms'),
+  errorMessage: text('error_message'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
