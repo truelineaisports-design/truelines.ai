@@ -1,9 +1,12 @@
 import { serve } from 'inngest/next';
-import { inngest } from '@/lib/inngest/client';
-import { fetchOddsJob } from '@/lib/inngest/jobs/fetch-odds';
-import { fetchInjuriesJob } from '@/lib/inngest/jobs/fetch-injuries';
+import { inngest } from '../../../inngest/client';
+import { generateParlays } from '../../../inngest/generateParlays';
+import { pollOddsStandard, pollOddsPregame } from '../../../inngest/fade-polling';
+import { pollLiveGames, processLiveGame } from '../../../inngest/functions/live-props';
+
+export const maxDuration = 300;
 
 export const { GET, POST, PUT } = serve({
   client: inngest,
-  functions: [fetchOddsJob, fetchInjuriesJob],
+  functions: [generateParlays, pollOddsStandard, pollOddsPregame, pollLiveGames, processLiveGame],
 });

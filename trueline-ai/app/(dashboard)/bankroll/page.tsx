@@ -1,11 +1,21 @@
-import RiskTierSelector from '@/components/RiskTierSelector'
+import { getBankroll, getBetHistory } from './actions';
+import { BankrollSetup } from './components/BankrollSetup';
+import { BankrollDashboard } from './components/BankrollDashboard';
 
-export default function BankrollPage() {
-  return (
-    <div className="max-w-lg mx-auto py-6">
-      <h1 className="text-2xl font-bold text-white mb-2">Bankroll Manager</h1>
-      <p className="text-gray-400 mb-6">Kelly Criterion stake sizing</p>
-      <RiskTierSelector />
-    </div>
-  )
+export default async function BankrollPage() {
+  const bankroll = await getBankroll();
+  const rawBetHistory = await getBetHistory();
+
+  if (!bankroll) {
+    return <BankrollSetup />;
+  }
+
+  const betHistory = rawBetHistory.map((bet) => ({
+    ...bet,
+    potentialPayout: bet.potentialPayout ?? '0.00',
+    actualPayout: bet.actualPayout ?? null,
+    kellyStakePct: bet.kellyStakePct ?? null,
+  }));
+
+  return <BankrollDashboard bankroll={bankroll} betHistory={betHistory} />;
 }

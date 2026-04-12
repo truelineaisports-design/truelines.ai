@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en">
-        <body>
+        <body style={{ backgroundColor: '#0a0a0f', color: '#ffffff', minHeight: '100vh' }}>
           <Providers>{children}</Providers>
         </body>
       </html>

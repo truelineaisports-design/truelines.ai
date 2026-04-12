@@ -1,46 +1,84 @@
-'use client'
-import { useGames } from '@/hooks/useGames'
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
+import { db } from '@/lib/db/client';
+import { parlays, parlayLegs, users, userBankrolls } from '@/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
+import ParlayCard from '@/components/ParlayCard';
+import GenerateButton from '@/components/GenerateButton';
 
-export default function ParlayPage() {
-  const { data: games, isLoading, isError } = useGames()
+export default async function ParlaysPage() {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) redirect('/sign-in');
+
+  let [user] = await db.select().from(users).where(eq(users.clerkId, clerkId));
+  if (!user) {
+    const [newUser] = await db.insert(users).values({
+      clerkId: clerkId,
+      email: '',
+      subscriptionTier: 'free',
+    }).returning();
+    user = newUser;
+  }
+
+  const [bankroll] = await db.select().from(userBankrolls)
+    .where(eq(userBankrolls.userId, user.id))
+    .limit(1);
+
+  const todaysParlays = await db.select().from(parlays)
+    .orderBy(desc(parlays.createdAt))
+    .limit(10);
+
+  const allLegs = todaysParlays.length > 0
+    ? await db.select().from(parlayLegs)
+    : [];
+
+  const parlaysWithLegs = todaysParlays.map(parlay => ({
+    ...parlay,
+    legs: allLegs.filter(leg => leg.parlayId === parlay.id),
+  }));
+
+  const isPro = user.subscriptionTier === 'pro' || user.subscriptionTier === 'sharp';
+  const visibleParlays = isPro
+    ? parlaysWithLegs
+    : parlaysWithLegs.filter(p => p.isFeatured).slice(0, 1);
 
   return (
-    <div className="max-w-lg mx-auto py-6">
-      <h1 className="text-2xl font-bold text-white mb-2">Tonight's Games</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-bold text-white">Tonight's Parlays</h1>
+        <GenerateButton />
+      </div>
 
-      {isLoading && [1,2,3].map((n) => (
-        <div key={n} className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-800">
-          <div className="h-5 bg-gray-800 rounded animate-pulse mb-2 w-3/4" />
-          <div className="h-4 bg-gray-800 rounded animate-pulse w-1/2" />
+      {visibleParlays.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <p className="text-xl mb-4">No parlays generated yet for today.</p>
+          <p>Click "Generate Parlays" to get tonight's picks.</p>
         </div>
-      ))}
-
-      {isError && (
-        <div className="bg-red-900/20 border border-red-800 rounded-xl p-4">
-          <p className="text-red-400">Could not load games. Please try again.</p>
+      ) : (
+        <div className="space-y-6">
+          {visibleParlays.map((parlay, index) => (
+            <ParlayCard
+              key={parlay.id}
+              parlay={parlay}
+              isPro={isPro}
+              rank={index + 1}
+              bankroll={bankroll ?? null}
+            />
+          ))}
         </div>
       )}
 
-      {games?.length === 0 && (
-        <p className="text-gray-500 text-center py-8">No games tonight.</p>
-      )}
-
-      {games?.map((game: any) => (
-        <div key={game.id} className="bg-gray-900 rounded-xl p-4 mb-3 border border-gray-800">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-white font-semibold">
-                {game.awayTeamAbbr} @ {game.homeTeamAbbr}
-              </p>
-              <p className="text-gray-400 text-sm">
-                {new Date(game.scheduledAt).toLocaleTimeString([],
-                  { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-            <span className="text-xs text-gray-500 uppercase">{game.status}</span>
-          </div>
+      {!isPro && parlaysWithLegs.length > 1 && (
+        <div className="mt-8 p-6 bg-gradient-to-r from-purple-900 to-blue-900 rounded-xl border border-purple-500">
+          <p className="text-white font-bold text-lg mb-2">
+            {parlaysWithLegs.length - 1} more parlay{parlaysWithLegs.length > 2 ? 's' : ''} available
+          </p>
+          <p className="text-gray-300 mb-4">Upgrade to Pro to see all 3 nightly parlays with full AI rationale.</p>
+          <a href="/pricing" className="bg-purple-500 hover:bg-purple-400 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+            Upgrade to Pro — $14.99/mo
+          </a>
         </div>
-      ))}
+      )}
     </div>
-  )
+  );
 }
