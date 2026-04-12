@@ -216,5 +216,6 @@ export const lineMovements = pgTable('line_movements', {
   movementPct: decimal('movement_pct', { precision: 5, scale: 3 }),
   isSteamMove: boolean('is_steam_move').notNull().default(false),
   capturedAt: timestamp('captured_at', { withTimezone: true }).defaultNow(),
+  movedAt: timestamp('captured_at', { withTimezone: true }).defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
