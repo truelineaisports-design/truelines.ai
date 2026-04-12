@@ -10,11 +10,13 @@ export default async function BankrollPage() {
     return <BankrollSetup />;
   }
 
-  const betHistory = rawBetHistory.map((bet) => ({
+const betHistory = rawBetHistory.map((bet) => ({
     ...bet,
     potentialPayout: bet.potentialPayout ?? '0.00',
     actualPayout: bet.actualPayout ?? null,
     kellyStakePct: bet.kellyStakePct ?? null,
+    placedAt: bet.placedAt ?? new Date(),
+    createdAt: bet.createdAt ?? new Date(),
   }));
 
   const safeBankroll = {
