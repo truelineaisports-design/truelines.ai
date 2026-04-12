@@ -35,6 +35,13 @@ export async function POST(req: Request) {
       clerkId: id,
       email: email_addresses[0]?.email_address ?? '',
       displayName: [first_name, last_name].filter(Boolean).join(' ') || null,
+    }).onConflictDoUpdate({
+      target: users.clerkId,
+      set: {
+        email: email_addresses[0]?.email_address ?? '',
+        displayName: [first_name, last_name].filter(Boolean).join(' ') || null,
+        updatedAt: new Date(),
+      }
     })
   }
 
