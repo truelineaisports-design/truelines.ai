@@ -75,12 +75,12 @@ export const generateParlays = inngest.createFunction(
       const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
       const result = await db.select().from(games).where(
-        and(
-          gte(games.gameDate, now),
-          lte(games.gameDate, tomorrow),
-          eq(games.status, 'scheduled')
-        )
-      );
+  and(
+    gte(games.scheduledAt, now),
+    lte(games.scheduledAt, tomorrow),
+    eq(games.status, 'scheduled')
+  )
+);
 
       if (result.length === 0) {
         throw new Error(`No scheduled games found in the next 24 hours`);
