@@ -131,11 +131,11 @@ export const generateParlays = inngest.createFunction(
       );
 
       const summary = {
-        games: contextData.games.map(g => ({
-          id: g.id,
-          home: g.homeTeam,
-          away: g.awayTeam,
-        })),
+        games: (contextData.games as any[]).map((g: any) => ({
+  id: g.id,
+  home: g.homeTeam,
+  away: g.awayTeam,
+})),
         players: contextData.players
           .filter(p => !injuredPlayerIds.has(p.id))
           .slice(0, 20).map(p => {

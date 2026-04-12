@@ -217,5 +217,9 @@ export const lineMovements = pgTable('line_movements', {
   isSteamMove: boolean('is_steam_move').notNull().default(false),
   capturedAt: timestamp('captured_at', { withTimezone: true }).defaultNow(),
   movedAt: timestamp('captured_at', { withTimezone: true }).defaultNow(),
+  market: varchar('market_type', { length: 30 }),
+  oldPrice: decimal('previous_odds', { precision: 8, scale: 2 }),
+  newPrice: decimal('current_odds', { precision: 8, scale: 2 }),
+  movement_pct: decimal('movement_pct', { precision: 5, scale: 3 }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
