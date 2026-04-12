@@ -31,17 +31,27 @@ export async function POST(req: Request) {
 
   if (event.type === 'user.created') {
     const { id, email_addresses, first_name, last_name } = event.data
+    const email = email_addresses[0]?.email_address ?? ''
+    const displayName = [first_name, last_name].filter(Boolean).join(' ') || null
+
     await db.insert(users).values({
       clerkId: id,
-      email: email_addresses[0]?.email_address ?? '',
-      displayName: [first_name, last_name].filter(Boolean).join(' ') || null,
+      email,
+      displayName,
     }).onConflictDoUpdate({
       target: users.clerkId,
       set: {
-        email: email_addresses[0]?.email_address ?? '',
-        displayName: [first_name, last_name].filter(Boolean).join(' ') || null,
+        email,
+        displayName,
         updatedAt: new Date(),
       }
+    }).catch(async () => {
+      // If conflict on email, just update by clerkId
+      await db.update(users).set({
+        email,
+        displayName,
+        updatedAt: new Date(),
+      }).where(eq(users.clerkId, id))
     })
   }
 
