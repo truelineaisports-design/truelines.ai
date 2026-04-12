@@ -150,6 +150,7 @@ export const users = pgTable('users', {
 
 // USER BANKROLLS
 export const userBankrolls = pgTable('user_bankrolls', {
+  maxDrawdownPct: decimal('max_drawdown_pct', { precision: 5, scale: 3 }),
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').unique().notNull().references(() => users.id),
   bankrollAmount: decimal('bankroll_amount', { precision: 12, scale: 2 }).notNull().default('0'),
